@@ -323,14 +323,29 @@
 
   function updateSlot() {
     var slot = $('answer-slot');
-    if (!slot) return;
+    if (!slot || !round) return;
+    var t = round.task;
     if (input === '') {
-      slot.textContent = '?';
+      // Spiel darf einen eigenen Platzhalter vorgeben (z.B. "?:??" bei der Uhr)
+      slot.textContent = t.placeholder || '?';
       slot.classList.remove('filled');
     } else {
-      slot.textContent = input;
+      // Spiel darf die Eingabe eigens darstellen (z.B. 735 -> 7:35)
+      slot.textContent = t.formatInput ? t.formatInput(input) : input;
       slot.classList.add('filled');
     }
+    // Haken ausgrauen, solange noch zu wenige Ziffern getippt sind
+    var ok = $('numpad') ? $('numpad').querySelector('.key-ok') : null;
+    if (ok) ok.disabled = (input.length < minDigits());
+  }
+
+  function minDigits() { return (round && round.task.minDigits) || 1; }
+  function maxDigits() { return (round && round.task.maxDigits) || 3; }
+
+  // Die richtige Lösung als Text (die Uhr zeigt "7:35" statt "735")
+  function answerText() {
+    var t = round.task;
+    return t.formatInput ? t.formatInput(String(t.answer)) : String(t.answer);
   }
 
   // ---------- Timer ----------
@@ -405,7 +420,7 @@
     soundTime();
     var fb = $('feedback');
     fb.className = 'feedback time';
-    fb.textContent = '⏰ Zeit um! Richtig wäre: ' + round.task.answer;
+    fb.textContent = '⏰ Zeit um! Richtig wäre: ' + answerText();
     advance(false, 1400);
   }
 
@@ -450,7 +465,7 @@
       updateSlot();
       submit();                 // einstellig: sofort prüfen
     } else {
-      if (input.length >= 3) return;
+      if (input.length >= maxDigits()) return;
       input += d;
       updateSlot();
     }
@@ -464,6 +479,7 @@
 
   function submit() {
     if (locked || !round || input === '') return;
+    if (input.length < minDigits()) return;   // z.B. Uhrzeit braucht mind. 3 Ziffern
     stopTimer();
     locked = true;
     var given = parseInt(input, 10);
@@ -476,7 +492,7 @@
       soundOk();
     } else {
       fb.className = 'feedback no';
-      fb.textContent = '✗ Richtig wäre: ' + round.task.answer;
+      fb.textContent = '✗ Richtig wäre: ' + answerText();
       soundNo();
     }
     advance(ok, ok ? 620 : 1400);
