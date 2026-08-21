@@ -9,6 +9,25 @@
   LernApp.load();
 
   // ============================================================
+  //  TON AN / AUS  (gilt überall, wird mitgespeichert)
+  // ============================================================
+  function paintSoundButtons() {
+    var on = LernApp.soundOn();
+    ['btn-sound-play', 'btn-sound-games'].forEach(function (id) {
+      var b = $(id);
+      if (!b) return;
+      b.textContent = on ? '🔊' : '🔇';
+      b.classList.toggle('off', !on);
+      b.title = on ? 'Ton ausschalten' : 'Ton einschalten';
+    });
+  }
+  ['btn-sound-play', 'btn-sound-games'].forEach(function (id) {
+    var b = $(id);
+    if (b) b.addEventListener('click', function () { LernApp.toggleSound(); paintSoundButtons(); });
+  });
+  paintSoundButtons();
+
+  // ============================================================
   //  1. PROFIL-AUSWAHL
   // ============================================================
   function renderProfiles() {
@@ -35,7 +54,7 @@
       info.className = 'pinfo';
       var nm = document.createElement('div');
       nm.className = 'pname';
-      nm.textContent = p.name;                 // textContent = sicher gegen komische Zeichen
+      nm.textContent = p.name;               // textContent = sicher
       var meta = document.createElement('div');
       meta.className = 'pmeta';
       meta.textContent = summarizeProfile(p);
@@ -63,14 +82,11 @@
     });
   }
 
-  // Kurzer Überblick: höchstes Level über alle Spiele
   function summarizeProfile(p) {
     var parts = [];
     LernApp.games().forEach(function (g) {
       var st = (p.games && p.games[g.id]) ? p.games[g.id] : null;
-      if (st && st.level > 0) {
-        parts.push(g.emoji + ' Lvl ' + st.level);
-      }
+      if (st && st.level > 0) parts.push(g.emoji + ' Lvl ' + st.level);
     });
     return parts.length ? parts.join('   ') : 'noch nicht gestartet';
   }
@@ -98,6 +114,7 @@
     if (!p) { openProfiles(); return; }
     $('who-name').textContent = (p.avatar || '🙂') + '  ' + p.name;
     renderGames();
+    paintSoundButtons();
     LernApp.showScreen('games');
   }
 
@@ -113,7 +130,14 @@
       var card = document.createElement('div');
       card.className = 'game-card c-' + g.color + (g.ready ? '' : ' soon');
 
-      // linker Teil: spielen
+      // Sammlung erst zeigen, wenn sie eine Rolle spielt (ab Level 4)
+      var covLine = '';
+      if (st.level >= 4) {
+        var need = LernApp.COVERAGE_REQ[st.level] || { min:1 };
+        var cov = LernApp.coverage(st, g, need.min);
+        covLine = '<span class="gcov">📚 Sammlung: ' + cov.have + ' von ' + cov.total + '</span>';
+      }
+
       var main = document.createElement('button');
       main.className = 'game-main';
       main.type = 'button';
@@ -123,21 +147,18 @@
           '<span class="gtitle">' + g.title +
             (g.ready ? '' : '<span class="badge-soon">kommt bald</span>') + '</span>' +
           '<span class="glevel">' +
-            (g.ready
-              ? ('Level ' + lv.n + ' · ' + lv.emoji + ' ' + lv.name)
-              : g.subtitle) +
-          '</span>' +
+            (g.ready ? ('Level ' + lv.n + ' · ' + lv.emoji + ' ' + lv.name) : g.subtitle) +
+          '</span>' + covLine +
         '</span>';
       main.addEventListener('click', function () {
         if (!g.ready) {
-          alert('„' + g.title + '“ bauen wir als Nächstes! 🚧\n\n' +
-                'Die Einstellungen dafür kannst du über das Zahnrad aber schon festlegen.');
+          alert('„' + g.title + '“ bauen wir als Nächstes! 🚧');
           return;
         }
         LernApp.startRound(g.id);
+        paintSoundButtons();
       });
 
-      // rechter Teil: Zahnrad = Einstellungen
       var gear = document.createElement('button');
       gear.className = 'game-gear';
       gear.type = 'button';
@@ -170,13 +191,41 @@
     var st = LernApp.gameState(p, gameId);
 
     $('settings-title').textContent = g.emoji + ' ' + g.title;
+
+    // (a) Für JEDES Spiel gleich: freie Patzer pro Runde
+    renderLivesSetting($('settings-common'), st.settings);
+
+    // (b) Das Spiel baut seinen eigenen Teil
     var body = $('settings-body');
     body.innerHTML = '';
-
-    // Das Spiel baut seine Einstellungen selbst und ruft save() bei Änderungen.
     g.renderSettings(body, st.settings, function () { LernApp.save(); });
 
     LernApp.showScreen('settings');
+  }
+
+  /* Leben = "kostenfreie Patzer". Ist noch ein Leben übrig, schüttelt sich
+     das Antwortfeld leer und man darf es nochmal versuchen. */
+  function renderLivesSetting(container, settings) {
+    container.innerHTML =
+      '<p class="set-hint">❤️ <b>Freie Patzer pro Runde</b><br>' +
+      'Bei einer falschen Antwort schüttelt sich das Feld leer und du darfst es ' +
+      'nochmal versuchen — die Frage zählt dann trotzdem als richtig. Die Zeit läuft weiter.</p>' +
+      '<div class="lives-chips">' +
+        [0,1,2,3].map(function (n) {
+          return '<button type="button" class="chip' + (settings.lives === n ? ' on' : '') +
+                 '" data-lives="' + n + '">' + (n === 0 ? '0' : '❤️'.repeat(n)) + '</button>';
+        }).join('') +
+      '</div>';
+
+    container.querySelectorAll('.chip').forEach(function (el) {
+      el.addEventListener('click', function () {
+        settings.lives = parseInt(el.getAttribute('data-lives'), 10);
+        container.querySelectorAll('.chip').forEach(function (c) {
+          c.classList.toggle('on', parseInt(c.getAttribute('data-lives'), 10) === settings.lives);
+        });
+        LernApp.save();
+      });
+    });
   }
 
   $('btn-settings-back').addEventListener('click', openGames);
@@ -193,11 +242,10 @@
   });
 
   $('btn-again').addEventListener('click', function () {
-    if (lastGameId) LernApp.startRound(lastGameId);
+    if (lastGameId) { LernApp.startRound(lastGameId); paintSoundButtons(); }
   });
   $('btn-to-games').addEventListener('click', openGames);
 
-  // merken, welches Spiel zuletzt lief (für "Nochmal spielen")
   var lastGameId = null;
   var origStart = LernApp.startRound;
   LernApp.startRound = function (id) { lastGameId = id; origStart(id); };

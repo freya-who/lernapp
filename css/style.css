@@ -11,7 +11,9 @@
   --shadow-lift:0 10px 28px rgba(0,0,0,.12);
 }
 
-* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* touch-action:manipulation = kein Zoom bei Doppeltipp (z.B. schnell
+   zweimal auf die Löschtaste). Wischen und Zwei-Finger-Zoom bleiben. */
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 
 html, body { height:100%; }
 
@@ -193,20 +195,33 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
 .play-main { display:flex; gap:12px; align-items:stretch; margin-top:8px; }
 .play-area { flex:1; min-width:0; }
 
-/* Timer-Balken rechts */
-.timer-col { flex:0 0 22px; display:flex; flex-direction:column; align-items:center; }
-.timer-track {
-  flex:1; width:14px; background:#e3e9f2; border-radius:99px;
-  position:relative; overflow:hidden; min-height:220px;
+/* Kopfzeile im Spiel: Leben, Sanduhr, Ton */
+.play-top { gap:8px; }
+.lives { font-size:1.05em; letter-spacing:1px; flex:1; text-align:center; }
+.icon-btn {
+  background:none; border:none; font-size:1.25em; cursor:pointer;
+  padding:4px 6px; line-height:1; font-family:inherit;
 }
-.timer-fill {
-  position:absolute; left:0; right:0; bottom:0; height:100%;
-  background:var(--green); border-radius:99px;
-  transition:background .35s ease;
+.icon-btn.off { opacity:.38; filter:grayscale(1); }
+
+.timer-box {
+  display:inline-flex; align-items:center; gap:5px;
+  background:#fff; border-radius:99px; padding:5px 11px 5px 8px;
+  box-shadow:var(--shadow); flex:0 0 auto;
 }
-.timer-fill.warn   { background:var(--yellow); }
-.timer-fill.danger { background:var(--red); }
-.timer-label { font-size:.66em; font-weight:800; color:var(--muted); margin-top:6px; letter-spacing:-.3px; }
+.hourglass { width:19px; height:25px; display:block; flex:0 0 auto; }
+.timer-label {
+  font-size:.82em; font-weight:800; color:var(--text);
+  font-variant-numeric:tabular-nums; min-width:30px; text-align:right;
+}
+.timer-box.warn   { box-shadow:0 0 0 2px rgba(245,183,0,.35); }
+.timer-box.danger {
+  box-shadow:0 0 0 2px rgba(239,68,68,.45);
+  animation:tick .7s ease-in-out infinite;
+}
+@keyframes tick { 50% { transform:scale(1.07); } }
+
+.level-line { text-align:center; margin-top:10px; }
 
 /* Aufgabe */
 .task { text-align:center; padding:10px 0 4px; }
@@ -300,3 +315,49 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
   .key { padding:12px 0; font-size:1.35em; }
   .timer-track { min-height:170px; }
 }
+
+/* ---------- "Nein"-Schütteln, wenn ein Leben verbraucht wird ---------- */
+@keyframes shake {
+  0%,100% { transform:translateX(0); }
+  15% { transform:translateX(-9px); }
+  30% { transform:translateX(8px); }
+  45% { transform:translateX(-6px); }
+  60% { transform:translateX(5px); }
+  80% { transform:translateX(-3px); }
+}
+.slot.shake {
+  animation:shake .45s ease;
+  border-color:var(--red) !important;
+  color:var(--red);
+}
+
+/* ---------- Sammlung (Fortschritt über ALLE Aufgaben) ---------- */
+.result-coverage {
+  background:#f5f8fc; border-radius:14px; padding:12px 14px; margin:12px 0 4px;
+  text-align:left;
+}
+.cov-title { font-size:.78em; font-weight:800; color:var(--muted); margin-bottom:7px; }
+.cov-track {
+  position:relative; height:11px; background:#e1e8f2;
+  border-radius:99px; overflow:hidden;
+}
+.cov-fill {
+  height:100%; border-radius:99px;
+  background:linear-gradient(90deg,#4D96FF,#22C55E);
+  transition:width .5s ease;
+}
+.cov-goal {
+  position:absolute; top:-2px; width:2px; height:15px;
+  background:var(--text); opacity:.45;
+}
+.cov-text { font-size:.76em; color:var(--muted); margin-top:6px; font-weight:600; }
+
+/* Sammlung klein auf der Spiel-Kachel */
+.gcov { display:block; font-size:.74em; color:#9aa5b1; margin-top:2px; }
+
+/* Kopfzeile der Spielauswahl */
+.who-actions { display:flex; align-items:center; gap:2px; }
+
+/* Einstellungen: Leben */
+.lives-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.lives-chips .chip { font-size:.98em; }

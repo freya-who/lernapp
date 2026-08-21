@@ -15,38 +15,40 @@
     color: 'orange',
     ready: true,
 
-    // Noch keine Einstellungen nötig — der Platz ist aber vorbereitet.
-    defaultSettings: function () { return {}; },
+    // Zerlegen geht schneller als Malnehmen -> etwas knackigere Zeiten
+    timers: [180, 180, 120, 30, 15, 15, 15, 15],
 
+    defaultSettings: function () { return {}; },
     settingsSummary: function () { return 'Zerlegungen bis 10'; },
 
-    newTask: function (settings, lastKey) {
-      var target, given, answer, key, guard = 0;
-      do {
-        target = LernApp.randInt(2, 10);           // alle Zerlegungen bis inkl. 10
-        // Der gesuchte Teil muss einstellig bleiben (Numpad 0–9):
-        var minGiven = Math.max(0, target - 9);
-        given = LernApp.randInt(minGiven, target);
-        answer = target - given;
-        key = target + '-' + given;
-        guard++;
-      } while (key === lastKey && guard < 30);
+    /* Alle Zerlegungen der Zahlen 2 bis 10.
+       Der gesuchte Teil muss einstellig bleiben (Numpad 0–9),
+       deshalb bei der 10 kein "0 + 10". */
+    allFacts: function () {
+      var out = [];
+      for (var ziel = 2; ziel <= 10; ziel++) {
+        var min = Math.max(0, ziel - 9);
+        for (var geg = min; geg <= ziel; geg++) out.push(ziel + '-' + geg);
+      }
+      return out;
+    },
 
+    taskFromFact: function (key) {
+      var p = key.split('-');
+      var ziel = parseInt(p[0], 10), geg = parseInt(p[1], 10);
       var slot = '<span class="slot" id="answer-slot">?</span>';
-      var part = '<span class="zer-part">' + given + '</span>';
-      var left  = Math.random() < 0.5;             // mal links, mal rechts leer
-      var row = left
-        ? part + '<span class="zer-plus">+</span>' + slot
-        : slot + '<span class="zer-plus">+</span>' + part;
+      var teil = '<span class="zer-part">' + geg + '</span>';
+      var linksVorgegeben = Math.random() < 0.5;    // mal links, mal rechts leer
+      var row = linksVorgegeben
+        ? teil + '<span class="zer-plus">+</span>' + slot
+        : slot + '<span class="zer-plus">+</span>' + teil;
 
       return {
-        key: key,
-        answer: answer,
-        digits: 1,                                  // einstellig -> tippen = sofort prüfen
-        html:
-          '<div class="zer-target">' + target + '</div>' +
-          '<div class="zer-eq">=</div>' +
-          '<div class="zer-row">' + row + '</div>'
+        answer: ziel - geg,
+        digits: 1,
+        html: '<div class="zer-target">' + ziel + '</div>' +
+              '<div class="zer-eq">=</div>' +
+              '<div class="zer-row">' + row + '</div>'
       };
     },
 

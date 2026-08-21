@@ -99,6 +99,9 @@
     color: 'purple',
     ready: true,
 
+    // Uhr ablesen braucht mehr Bedenkzeit als reines Rechnen
+    timers: [180, 180, 120, 45, 30, 30, 30, 30],
+
     defaultSettings: function () {
       return {
         hideMinuteNumbers: false, // Minutenzahlen (5,10,15…) ausblenden
@@ -115,22 +118,24 @@
       return off.length ? ('ohne ' + off.join(', ')) : 'volles Zifferblatt';
     },
 
-    newTask: function (settings, lastKey) {
-      var stunde, minute, key, guard = 0;
-      do {
-        stunde = LernApp.randInt(1, 12);
-        minute = LernApp.randInt(0, 11) * 5;   // nur 5er-Schritte
-        key = stunde + ':' + minute;
-        guard++;
-      } while (key === lastKey && guard < 30);
+    // Alle Uhrzeiten in 5-Minuten-Schritten: 12 Stunden x 12 Minutenwerte
+    allFacts: function () {
+      var out = [];
+      for (var h = 1; h <= 12; h++) {
+        for (var m = 0; m < 60; m += 5) out.push(h + ':' + m);
+      }
+      return out;
+    },
 
+    taskFromFact: function (key, settings) {
+      var p = key.split(':');
+      var stunde = parseInt(p[0], 10), minute = parseInt(p[1], 10);
       return {
-        key: key,
         // 7:35 -> 735, 12:30 -> 1230
         answer: stunde * 100 + minute,
-        digits: 2,            // mehrstellig -> Numpad mit ⌫ und ✓
+        digits: 2,            // mehrstellig -> Numpad mit Loeschen und Haken
         minDigits: 3,         // mindestens H+MM
-        maxDigits: 4,         // höchstens HH+MM
+        maxDigits: 4,         // hoechstens HH+MM
         placeholder: '?:??',
         formatInput: alsUhrzeit,
         html:

@@ -15,41 +15,41 @@
     color: 'blue',
     ready: true,
 
-    // Standard-Einstellungen: alle Reihen an
-    defaultSettings: function () {
-      return { reihen: ALL_ROWS.slice() };
-    },
+    /* Sekunden pro Frage, Level 0 bis 7.
+       Ab Level 4 bleibt es bei 20 Sekunden — schneller wird es nicht,
+       stattdessen zählt ab dort die Vollständigkeit der Sammlung. */
+    timers: [180, 180, 120, 30, 20, 20, 20, 20],
 
-    // Kurztext auf der Spiel-Kachel
+    defaultSettings: function () { return { reihen: ALL_ROWS.slice() }; },
+
     settingsSummary: function (s) {
       var r = s.reihen || [];
       if (r.length === ALL_ROWS.length) return 'alle Reihen';
-      if (r.length === 0) return 'keine Reihe gewählt';
       return 'Reihen: ' + r.slice().sort(function (a, b) { return a - b; }).join(', ');
     },
 
-    // Neue Aufgabe bauen
-    newTask: function (settings, lastKey) {
+    // Alle Aufgaben, die zu den eingestellten Reihen gehören
+    allFacts: function (settings) {
       var rows = (settings.reihen && settings.reihen.length) ? settings.reihen : ALL_ROWS;
-      var a, b, key, guard = 0;
-      do {
-        a = rows[Math.floor(Math.random() * rows.length)];
-        b = LernApp.randInt(1, 10);
-        key = a + 'x' + b;
-        guard++;
-      } while (key === lastKey && guard < 30);   // nicht zweimal dasselbe
+      var out = [];
+      rows.slice().sort(function (a, b) { return a - b; }).forEach(function (a) {
+        for (var b = 1; b <= 10; b++) out.push(a + 'x' + b);
+      });
+      return out;
+    },
 
+    // Aus "7x8" die konkrete Aufgabe bauen
+    taskFromFact: function (key) {
+      var p = key.split('x');
+      var a = parseInt(p[0], 10), b = parseInt(p[1], 10);
       return {
-        key: key,
         answer: a * b,
-        digits: 2,                                // mehrstellig -> Numpad mit ⌫ und ✓
-        html:
-          '<div class="task-question">' + a + ' × ' + b + '</div>' +
-          '<div class="task-answer"><span class="slot" id="answer-slot">?</span></div>'
+        digits: 2,
+        html: '<div class="task-question">' + a + ' × ' + b + '</div>' +
+              '<div class="task-answer"><span class="slot" id="answer-slot">?</span></div>'
       };
     },
 
-    // Einstellungs-Bildschirm
     renderSettings: function (container, settings, save) {
       var chips = ALL_ROWS.map(function (n) {
         var on = settings.reihen.indexOf(n) !== -1;
@@ -66,11 +66,10 @@
         '</div>';
 
       function redraw() {
-        var all = container.querySelectorAll('.chip');
-        for (var i = 0; i < all.length; i++) {
-          var n = parseInt(all[i].getAttribute('data-row'), 10);
-          all[i].classList.toggle('on', settings.reihen.indexOf(n) !== -1);
-        }
+        container.querySelectorAll('.chip').forEach(function (el) {
+          var n = parseInt(el.getAttribute('data-row'), 10);
+          el.classList.toggle('on', settings.reihen.indexOf(n) !== -1);
+        });
         save();
       }
 
@@ -79,11 +78,10 @@
           var n = parseInt(el.getAttribute('data-row'), 10);
           var i = settings.reihen.indexOf(n);
           if (i === -1) settings.reihen.push(n);
-          else if (settings.reihen.length > 1) settings.reihen.splice(i, 1);  // nie alle abwählen
+          else if (settings.reihen.length > 1) settings.reihen.splice(i, 1);
           redraw();
         });
       });
-
       container.querySelector('#rows-all').addEventListener('click', function () {
         settings.reihen = ALL_ROWS.slice(); redraw();
       });

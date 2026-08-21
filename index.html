@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Lern-App">
 <title>🎓 Meine Lern-App</title>
-<!-- ?v=3 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
+<!-- ?v=4 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
      nicht die alte zwischengespeicherte Datei anzeigen. -->
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 <div class="app">
@@ -33,7 +33,10 @@
   <div id="screen-games" class="screen">
     <div class="who-bar">
       <span class="who" id="who-name"></span>
-      <button class="btn-link" id="btn-switch-profile">Spieler wechseln</button>
+      <span class="who-actions">
+        <button class="icon-btn" id="btn-sound-games" title="Ton an/aus">🔊</button>
+        <button class="btn-link" id="btn-switch-profile">Spieler wechseln</button>
+      </span>
     </div>
     <p class="subtitle">Was möchtest du üben?</p>
     <div id="game-list"></div>
@@ -45,35 +48,44 @@
       <button class="btn-back" id="btn-settings-back">← Zurück</button>
     </div>
     <h2 id="settings-title"></h2>
+    <div class="panel" id="settings-common"></div>
     <div class="panel" id="settings-body"></div>
     <button class="btn btn-primary btn-wide" id="btn-settings-done">Fertig</button>
   </div>
 
   <!-- ============ 4. SPIELEN ============ -->
   <div id="screen-play" class="screen">
+
+    <!-- Kopfzeile: zurück · Leben · Sanduhr · Ton -->
     <div class="play-top">
       <button class="btn-back" id="btn-play-back">← Zurück</button>
-      <span class="level-badge" id="level-badge"></span>
+      <span class="lives" id="lives"></span>
+      <span class="timer-box" id="timer-box">
+        <svg class="hourglass" viewBox="0 0 24 32" aria-hidden="true">
+          <defs>
+            <clipPath id="hgTop"><polygon points="4.5,4 19.5,4 12,15.4"/></clipPath>
+            <clipPath id="hgBot"><polygon points="12,16.6 19.5,28 4.5,28"/></clipPath>
+          </defs>
+          <rect id="hg-top" x="4" y="4"  width="16" height="11.5" fill="#22C55E" clip-path="url(#hgTop)"/>
+          <rect id="hg-bot" x="4" y="28" width="16" height="0"    fill="#22C55E" clip-path="url(#hgBot)"/>
+          <path d="M4 3.2 H20 M4 28.8 H20 M5.3 3.7 L12 16 L5.3 28.3 M18.7 3.7 L12 16 L18.7 28.3"
+                fill="none" stroke="#94a5bd" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="timer-label" id="timer-label"></span>
+      </span>
+      <button class="icon-btn" id="btn-sound-play" title="Ton an/aus">🔊</button>
     </div>
 
-    <!-- Fortschrittsbalken OBEN: welches Level -->
+    <div class="level-line"><span class="level-badge" id="level-badge"></span></div>
     <div class="level-bar" id="level-bar"></div>
 
-    <div class="play-main">
-      <div class="play-area">
-        <div class="task" id="task"></div>
-        <div class="feedback" id="feedback"></div>
-        <div class="numpad" id="numpad"></div>
-      </div>
-
-      <!-- Timer-Balken RECHTS -->
-      <div class="timer-col">
-        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
-        <div class="timer-label" id="timer-label"></div>
-      </div>
+    <div class="play-area">
+      <div class="task" id="task"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="numpad" id="numpad"></div>
     </div>
 
-    <!-- Fortschrittsbalken UNTEN: Frage X von 20 -->
     <div class="q-progress">
       <div class="q-track"><div class="q-fill" id="q-fill"></div></div>
       <div class="q-label" id="q-label"></div>
@@ -88,6 +100,7 @@
       <div class="result-score" id="result-score"></div>
       <p class="result-msg" id="result-msg"></p>
       <div class="result-level" id="result-level"></div>
+      <div class="result-coverage" id="result-coverage"></div>
       <div class="result-hearts" id="result-hearts"></div>
       <button class="btn btn-primary btn-wide" id="btn-again">Nochmal spielen</button>
       <button class="btn btn-ghost btn-wide" id="btn-to-games">Anderes Spiel</button>
@@ -97,10 +110,10 @@
 </div>
 
 <!-- Motor zuerst, dann die Spiele (melden sich selbst an), dann Start -->
-<script src="js/engine.js?v=3"></script>
-<script src="js/games/einmaleins.js?v=3"></script>
-<script src="js/games/zerlegung.js?v=3"></script>
-<script src="js/games/uhr.js?v=3"></script>
-<script src="js/main.js?v=3"></script>
+<script src="js/engine.js?v=4"></script>
+<script src="js/games/einmaleins.js?v=4"></script>
+<script src="js/games/zerlegung.js?v=4"></script>
+<script src="js/games/uhr.js?v=4"></script>
+<script src="js/main.js?v=4"></script>
 </body>
 </html>
