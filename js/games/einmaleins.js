@@ -16,9 +16,10 @@
     ready: true,
 
     /* Sekunden pro Frage, Level 0 bis 7.
-       Ab Level 4 bleibt es bei 20 Sekunden — schneller wird es nicht,
-       stattdessen zählt ab dort die Vollständigkeit der Sammlung. */
-    timers: [180, 180, 120, 30, 20, 20, 20, 20],
+       Ab Level 4 bleibt es bei 30 Sekunden — schneller wird es nicht,
+       stattdessen zählt ab dort die Vollständigkeit der Sammlung.
+       (Hier kannst du das Tempo jederzeit anpassen.) */
+    timers: [180, 180, 120, 45, 30, 30, 30, 30],
 
     defaultSettings: function () { return { reihen: ALL_ROWS.slice() }; },
 

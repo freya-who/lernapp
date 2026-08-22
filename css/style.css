@@ -308,13 +308,45 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
   to { transform:translateY(105vh) rotate(720deg); opacity:.9; }
 }
 
-/* Kleine Bildschirme */
-@media (max-height:640px) {
+/* ---------- Niedrige Bildschirme ----------
+   Auf kleineren Handys muss alles ohne Scrollen passen. Vor allem der
+   Tipp-Modus der Uhr braucht viel Höhe (Uhr + Numpad), deshalb wird
+   dort am stärksten zusammengerückt. */
+@media (max-height: 740px) {
+  .app { padding-top:12px; }
+  .level-line { margin-top:6px; }
+  .level-bar { margin:8px 0 4px; }
+  .task { padding:4px 0 0; }
   .task-question { font-size:2.3em; }
-  .zer-target { font-size:2.5em; }
-  .key { padding:12px 0; font-size:1.35em; }
-  .timer-track { min-height:170px; }
+  .zer-target { font-size:2.6em; }
+  .feedback { height:24px; margin:6px 0 2px; font-size:.98em; }
+  .numpad { gap:7px; }
+  .key { padding:11px 0; font-size:1.32em; border-radius:14px; }
+  .slot { height:60px; min-width:62px; font-size:1.75em; }
+  .task-answer { margin-top:8px; }
+  .task-answer .slot { min-width:100px; }
+  .slot-time { min-width:124px; }
+  .clock-hint { font-size:.82em; margin-top:0; }
+  .q-progress { margin-top:9px; }
+  .choice { min-height:54px; padding:11px 8px; font-size:.9em; }
+
+  /* Beim Eintippen steht direkt darunter das ?:??-Feld — der Hinweis
+     "Wie spät ist es?" ist dort entbehrlich und schafft Platz. */
+  .clock-type + .clock-hint { display:none; }
+
+  .play-area .clock                { max-width:190px; }
+  .play-area .clock.clock-big      { max-width:205px; }
+  .play-area .clock.clock-type     { max-width:132px; }
+  .play-area .clock.clock-type.clock-big { max-width:142px; }
 }
+
+@media (max-height: 620px) {
+  .key { padding:9px 0; font-size:1.2em; }
+  .slot { height:52px; font-size:1.55em; }
+  .play-area .clock.clock-type     { max-width:112px; }
+  .play-area .clock.clock-type.clock-big { max-width:120px; }
+}
+
 
 /* ---------- "Nein"-Schütteln, wenn ein Leben verbraucht wird ---------- */
 @keyframes shake {
@@ -361,3 +393,35 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
 /* Einstellungen: Leben */
 .lives-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .lives-chips .chip { font-size:.98em; }
+
+/* ---------- Uhr: Multiple-Choice-Antworten ---------- */
+.choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+.choice {
+  border:2px solid var(--line); background:#fff; color:var(--text);
+  border-radius:16px; padding:14px 8px; min-height:60px;
+  font-size:.95em; font-weight:700; font-family:inherit; cursor:pointer;
+  box-shadow:var(--shadow); line-height:1.25;
+  transition:transform .08s ease, background .12s ease;
+}
+.choice:active { transform:scale(.96); background:#eef3ff; }
+.choice[disabled] { opacity:.35; }
+.choice.shake { border-color:var(--red); color:var(--red); }
+
+/* Ohne Minutenzahlen darf die Uhr größer sein */
+.clock-big { max-width:250px; }
+
+/* Auswahl der Antwortart in den Einstellungen */
+.mode-chips { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mode-chips .chip { padding:12px 6px; font-size:.95em; line-height:1.3; }
+.chip-sub { display:block; font-size:.72em; font-weight:600; opacity:.75; margin-top:3px; }
+.set-trenner { border:none; border-top:1px solid var(--line); margin:16px 0 14px; }
+
+/* Ergebnis: mehrzeilige Hinweise sauber umbrechen */
+.result-hearts { white-space:pre-line; }
+
+/* Uhrgröße je nach Platzbedarf — alles muss ohne Scrollen aufs Handy passen.
+   Beim Eintippen frisst das Numpad Höhe, dort bleibt die Uhr kleiner. */
+.play-area .clock                { max-width:215px; }
+.play-area .clock.clock-big      { max-width:240px; }
+.play-area .clock.clock-type     { max-width:180px; }
+.play-area .clock.clock-type.clock-big { max-width:196px; }

@@ -15,8 +15,9 @@
     color: 'orange',
     ready: true,
 
-    // Zerlegen geht schneller als Malnehmen -> etwas knackigere Zeiten
-    timers: [180, 180, 120, 30, 15, 15, 15, 15],
+    /* Zerlegen geht etwas schneller als Malnehmen, bleibt aber ab
+       Level 4 bei 20 Sekunden stehen. */
+    timers: [180, 180, 120, 40, 20, 20, 20, 20],
 
     defaultSettings: function () { return {}; },
     settingsSummary: function () { return 'Zerlegungen bis 10'; },

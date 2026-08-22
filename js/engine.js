@@ -2,7 +2,7 @@
    MOTOR der Lern-App
    Kümmert sich um: Speichern, Profile, Level, Timer, Numpad,
    Leben, Sammlung (welche Aufgaben sitzen schon) und den
-   Ablauf einer Runde (20 Fragen).
+   Ablauf einer Runde (10 Fragen).
    Die einzelnen Spiele stehen in js/games/ und melden sich hier an.
    ============================================================ */
 (function (global) {
@@ -13,9 +13,10 @@
   // ============================================================
   var STORE_KEY   = 'lernapp.v2';
   var OLD_KEY     = 'lernapp.v1';
-  var ROUND_SIZE  = 20;    // eine Runde = 20 Fragen
-  var PASS_L0     = 10;    // Level 0 -> 1 schafft man mit 10 von 20
-  var MAX_STRIKES = 2;     // erst nach 2 verpatzten Runden geht es abwärts
+  var ROUND_SIZE   = 10;   // eine Runde = 10 Fragen (kurz genug für Grundschüler)
+  var PASS_L0      = 5;    // Level 0 -> 1 schafft man mit 5 von 10
+  var MAX_STRIKES  = 2;    // erst nach 2 verpatzten Runden geht es abwärts
+  var NEED_PERFECT = 2;    // für einen Aufstieg braucht es 2 fehlerfreie Runden
 
   // Die Level-Leiter. Die ZEIT steht beim jeweiligen Spiel (game.timers),
   // weil 20 Sekunden beim Einmaleins etwas anderes bedeuten als beim Uhr-Lesen.
@@ -35,7 +36,7 @@
   var DEFAULT_TIMERS = [180, 180, 120, 30, 20, 20, 20, 20];
 
   /* AB LEVEL 4 zählt nicht mehr nur Tempo, sondern Vollständigkeit:
-     Es reicht nicht, 20 von 20 zu schaffen — man muss auch genügend
+     Es reicht nicht, fehlerfrei zu sein — man muss auch genügend
      verschiedene Aufgaben sicher können.
        von Level 4 -> 5:  50 % aller Aufgaben mind. 1x richtig
        von Level 5 -> 6: 100 % aller Aufgaben mind. 1x richtig
@@ -149,11 +150,12 @@
     var g = getGame(gameId);
     var st = profile.games[gameId];
     if (!st || typeof st !== 'object') {
-      st = { level:0, strikes:0, rounds:0, bestCorrect:0, lastPlayed:null, settings:null, mastery:{} };
+      st = { level:0, strikes:0, streak:0, rounds:0, bestCorrect:0, lastPlayed:null, settings:null, mastery:{} };
       profile.games[gameId] = st;
     }
     if (typeof st.level !== 'number') st.level = 0;
     if (typeof st.strikes !== 'number') st.strikes = 0;
+    if (typeof st.streak !== 'number') st.streak = 0;
     if (typeof st.rounds !== 'number') st.rounds = 0;
     if (typeof st.bestCorrect !== 'number') st.bestCorrect = 0;
     if (!st.mastery || typeof st.mastery !== 'object') st.mastery = {};
@@ -194,7 +196,7 @@
      man am Ende ewig auf die letzten drei fehlenden Aufgaben warten.
      Die restlichen Plätze füllen sich gewichtet: was noch nicht sitzt,
      kommt häufiger. */
-  var NEW_PER_ROUND = 12;
+  var NEW_PER_ROUND = 6;
 
   function shuffleArr(a) {
     a = a.slice();
@@ -264,32 +266,43 @@
   function evaluateRound(st, correct, game) {
     var from = st.level;
     var perfect = (correct === ROUND_SIZE);
-    var res = { from:from, to:from, kind:'stay', strikes:st.strikes, need:null, cov:null };
+    var res = { from:from, to:from, kind:'stay', strikes:st.strikes,
+                streak:st.streak, need:null, cov:null };
 
     if (from === 0) {
+      // Aus Level 0 kommt man sofort heraus — ohne Serie.
       if (perfect)                 { st.level = 2; res.kind = 'up'; }
       else if (correct >= PASS_L0) { st.level = 1; res.kind = 'up'; }
-      st.strikes = 0;
+      st.strikes = 0; st.streak = 0;
 
     } else if (perfect) {
-      var req = COVERAGE_REQ[from];
-      if (req) {
-        var cov = coverage(st, game, req.min);
-        if (cov.pct + 1e-9 < req.pct) {
-          // Perfekt gespielt, aber die Sammlung ist noch nicht voll genug.
-          res.kind = 'needcoverage';
-          res.need = req;
-          res.cov  = cov;
-          st.strikes = 0;                 // perfekt = keine Verwarnung
-          res.to = st.level; res.strikes = 0;
-          return res;
-        }
-      }
-      if (from < MAX_LEVEL) { st.level = from + 1; res.kind = 'up'; }
-      else                  { res.kind = 'master'; }
+      st.streak = Math.min(NEED_PERFECT, st.streak + 1);
       st.strikes = 0;
 
+      if (st.streak < NEED_PERFECT) {
+        // Erste saubere Runde geschafft — es fehlt noch eine.
+        res.kind = 'streak';
+
+      } else {
+        // Zwei saubere Runden. Zählt ab Level 4 auch noch die Sammlung?
+        var req = COVERAGE_REQ[from];
+        if (req) {
+          var cov = coverage(st, game, req.min);
+          if (cov.pct + 1e-9 < req.pct) {
+            res.kind = 'needcoverage';
+            res.need = req; res.cov = cov;
+            // Serie bleibt stehen: sobald die Sammlung reicht, geht es weiter.
+            res.to = st.level; res.strikes = st.strikes; res.streak = st.streak;
+            return res;
+          }
+        }
+        if (from < MAX_LEVEL) { st.level = from + 1; res.kind = 'up'; }
+        else                  { res.kind = 'master'; }
+        st.streak = 0;
+      }
+
     } else {
+      st.streak = 0;                 // Serie gerissen
       st.strikes++;
       if (st.strikes >= MAX_STRIKES) {
         st.strikes = 0;
@@ -301,6 +314,7 @@
     }
     res.to = st.level;
     res.strikes = st.strikes;
+    res.streak  = st.streak;
     return res;
   }
 
@@ -436,7 +450,8 @@
     $('feedback').className = 'feedback';
 
     $('task').innerHTML = round.task.html;
-    renderNumpad(round.task.digits === 1 ? 'single' : 'multi');
+    if (round.task.choices) renderChoices(round.task.choices);
+    else renderNumpad(round.task.digits === 1 ? 'single' : 'multi');
     updateSlot();
     updateQProgress();
     startTimer();
@@ -468,17 +483,17 @@
 
   function answerText() {
     var t = round.task;
+    if (t.answerLabel) return t.answerLabel;
     return t.formatInput ? t.formatInput(String(t.answer)) : String(t.answer);
   }
 
-  // "Nein"-Schütteln des Antwortfeldes, danach ist es wieder leer
-  function shakeSlot() {
-    var slot = $('answer-slot');
-    if (!slot) return;
-    slot.classList.remove('shake');
-    void slot.offsetWidth;          // Animation neu starten
-    slot.classList.add('shake');
-    setTimeout(function () { slot.classList.remove('shake'); }, 500);
+  // "Nein"-Schütteln (Antwortfeld oder Auswahl-Knopf)
+  function shakeEl(el) {
+    if (!el) return;
+    el.classList.remove('shake');
+    void el.offsetWidth;            // Animation neu starten
+    el.classList.add('shake');
+    setTimeout(function () { el.classList.remove('shake'); }, 500);
   }
 
   // ---------- Timer ----------
@@ -568,6 +583,7 @@
   // ---------- Numpad ----------
   function renderNumpad(mode) {
     var pad = $('numpad');
+    pad.className = 'numpad';
     pad.innerHTML = '';
     ['1','2','3','4','5','6','7','8','9'].forEach(function (k) {
       pad.appendChild(makeKey(k, 'key', function () { press(k); }));
@@ -581,6 +597,38 @@
       pad.appendChild(makeKey('0', 'key', function () { press('0'); }));
       pad.appendChild(makeKey('✓', 'key key-ok', submit));
     }
+  }
+
+  /* Antwort-Knöpfe statt Numpad. Das Spiel liefert task.choices (Texte)
+     und task.answerLabel (welcher davon stimmt). */
+  function renderChoices(choices) {
+    var pad = $('numpad');
+    pad.className = 'choices';
+    pad.innerHTML = '';
+    choices.forEach(function (text) {
+      var b = document.createElement('button');
+      b.className = 'choice';
+      b.type = 'button';
+      b.textContent = text;
+      b.addEventListener('click', function () { chooseAnswer(text, b); });
+      pad.appendChild(b);
+    });
+  }
+
+  function chooseAnswer(text, btn) {
+    if (locked || !round) return;
+    soundTick();
+    var ok = (text === round.task.answerLabel);
+    if (!ok && round.livesLeft > 0) {
+      round.livesLeft--;
+      round.usedLife = true;
+      soundOops();
+      shakeEl(btn);
+      btn.disabled = true;            // diese Antwort ist verbraucht
+      renderLives();
+      return;
+    }
+    finishQuestion(ok);
   }
 
   function makeKey(label, cls, fn) {
@@ -625,21 +673,25 @@
       round.livesLeft--;
       round.usedLife = true;
       soundOops();
-      shakeSlot();
+      shakeEl($('answer-slot'));
       input = '';
       updateSlot();
       renderLives();
       return;
     }
+    finishQuestion(ok);
+  }
 
+  // Gemeinsamer Abschluss einer Frage — für Numpad UND Antwort-Knöpfe
+  function finishQuestion(ok) {
     stopTimer();
     locked = true;
     var fb = $('feedback');
     if (ok) {
       round.correct++;
       fb.className = 'feedback ok';
-      // Mit Leben gerettet? Dann zählt die Frage als richtig,
-      // die Sammlung bleibt aber unverändert (weder rauf noch runter).
+      /* Mit Leben gerettet? Dann zählt die Frage als richtig, die Sammlung
+         bleibt aber unverändert (weder rauf noch runter). */
       if (round.usedLife) {
         fb.textContent = '✓ Richtig! (mit Joker)';
       } else {
@@ -653,7 +705,7 @@
       bumpMastery(round.st, round.factKey, -1);
       soundNo();
     }
-    advance(ok ? 620 : 1400);
+    advance(ok ? 620 : 1500);
   }
 
   function advance(delay) {
@@ -699,7 +751,7 @@
 
     } else if (res.kind === 'needcoverage') {
       emoji = '🔎'; title = 'Perfekte Runde!';
-      msg = 'Alle 20 richtig! Für das nächste Level zählt jetzt aber die Sammlung: ' +
+      msg = 'Zwei fehlerfreie Runden! Für das nächste Level zählt jetzt aber die Sammlung: ' +
             'du brauchst ' + Math.round(res.need.pct * 100) + ' % aller Aufgaben ' +
             (res.need.min === 2 ? 'zweimal' : 'mindestens einmal') + ' richtig.';
       soundOk();
@@ -709,15 +761,21 @@
       msg = 'Kein Problem — du übst jetzt wieder als ' + lvTo.emoji + ' ' + lvTo.name +
             ' mit ' + prettyTime(timerSeconds(game, res.to)) + ' pro Aufgabe.';
 
+    } else if (res.kind === 'streak') {
+      emoji = '⭐'; title = 'Fehlerfrei!';
+      msg = 'Eine saubere Runde geschafft. Schaffst du gleich noch eine, ' +
+            'steigst du ein Level auf!';
+      soundOk();
+
     } else if (res.kind === 'warn') {
       emoji = '🙂'; title = 'Fast!';
-      msg = 'Für das nächste Level brauchst du alle 20 richtig. Noch ein Versuch!';
+      msg = 'Für das nächste Level brauchst du zwei fehlerfreie Runden hintereinander.';
 
     } else {
       emoji = '🙂'; title = 'Weiter üben!';
       msg = res.from === 0
-        ? 'Mit 10 von 20 richtigen Antworten kommst du auf Level 1.'
-        : 'Für das nächste Level brauchst du alle 20 richtig.';
+        ? 'Mit ' + PASS_L0 + ' von ' + ROUND_SIZE + ' richtigen Antworten kommst du auf Level 1.'
+        : 'Für das nächste Level brauchst du zwei fehlerfreie Runden hintereinander.';
     }
 
     $('result-emoji').textContent = emoji;
@@ -747,13 +805,16 @@
       }
     }
 
-    var hearts = '';
-    if (res.to >= 1 && res.kind !== 'needcoverage') {
-      var left = MAX_STRIKES - res.strikes;
-      hearts = 'Sicherheitsnetz: ' + '❤️'.repeat(left) + '🤍'.repeat(MAX_STRIKES - left);
-      if (res.strikes > 0) hearts += ' — noch eine verpatzte Runde, dann geht es ein Level zurück.';
+    var zeilen = [];
+    if (res.to >= 1) {
+      zeilen.push('Fehlerfreie Runden: ' +
+        '⭐'.repeat(res.streak) + '☆'.repeat(Math.max(0, NEED_PERFECT - res.streak)) +
+        '  (' + res.streak + ' von ' + NEED_PERFECT + ')');
+      if (res.strikes > 0) {
+        zeilen.push('Noch eine verpatzte Runde, dann geht es ein Level zurück.');
+      }
     }
-    $('result-hearts').textContent = hearts;
+    $('result-hearts').textContent = zeilen.join('\n');
 
     showScreen('result');
   }
@@ -772,6 +833,7 @@
   document.addEventListener('keydown', function (e) {
     var playing = document.getElementById('screen-play');
     if (!playing || !playing.classList.contains('active') || !round) return;
+    if (round.task.choices) return;   // bei Auswahl-Fragen kein Tippen
     if (e.key >= '0' && e.key <= '9') { press(e.key); e.preventDefault(); }
     else if (e.key === 'Backspace')   { backspace(); e.preventDefault(); }
     else if (e.key === 'Enter')       { submit(); e.preventDefault(); }
