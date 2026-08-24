@@ -546,3 +546,83 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
 
 /* Dialog: versteckte Teile sauber ausblenden */
 #modal-icon[hidden], #modal-text[hidden], #modal-ok[hidden] { display:none; }
+
+/* ============================================================
+   ERKLÄRUNG (In-App-Seite) + ℹ️-Knöpfe
+   ============================================================ */
+
+/* Der kleine "i"-Knopf */
+.info-btn {
+  width:30px; height:30px; border-radius:50%;
+  border:1.6px solid var(--line); background:var(--card);
+  color:var(--muted); font-family:Georgia,"Times New Roman",serif;
+  font-weight:700; font-style:italic; font-size:1.05em; line-height:1;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow); flex:0 0 auto; padding:0;
+}
+.info-btn:active { transform:scale(.9); }
+.info-btn:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+/* auf der Profil-Seite oben rechts in die Ecke */
+#screen-profiles { position:relative; }
+#btn-info-profiles { position:absolute; top:0; right:0; z-index:5; }
+
+/* Kopf der Erklärung */
+.info-h1 { font-size:1.5em; text-align:center; margin:2px 0 2px; }
+.info-h2 {
+  font-size:1.08em; font-weight:800; text-align:left;
+  margin:26px 0 12px; color:var(--text);
+}
+.info-p { font-size:.92em; color:var(--muted); line-height:1.55; margin:0; }
+.info-caption { font-size:.78em; color:var(--muted); margin:8px 2px 0; line-height:1.4; }
+
+/* Die drei Spiele */
+.info-games { display:grid; gap:10px; }
+.info-game {
+  display:flex; align-items:center; gap:13px;
+  background:var(--card); border-radius:14px; box-shadow:var(--shadow);
+  padding:13px 15px; border-left:5px solid var(--blue);
+}
+.info-game.c-blue   { border-left-color:var(--blue); }
+.info-game.c-orange { border-left-color:var(--orange); }
+.info-game.c-purple { border-left-color:var(--purple); }
+.info-game .ig-emoji { font-size:1.7em; flex:0 0 auto; width:1.3em; text-align:center; }
+.info-game .ig-text { font-size:.9em; color:var(--muted); line-height:1.4; }
+.info-game .ig-text b { display:block; color:var(--text); font-size:1.08em; margin-bottom:1px; }
+
+/* Zwei Phasen */
+.info-phases { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.info-phase {
+  background:var(--card); border-radius:14px; box-shadow:var(--shadow);
+  padding:13px 14px;
+}
+.info-phase b { display:block; font-size:1em; margin:8px 0 3px; }
+.info-phase > span:last-child { font-size:.82em; color:var(--muted); line-height:1.4; display:block; }
+.info-tag {
+  display:inline-block; font-size:.68em; font-weight:800; letter-spacing:.03em;
+  padding:3px 9px; border-radius:99px; font-family:inherit;
+}
+.info-tag.t-speed { background:#E7EEFB; color:#2f5bbf; }
+.info-tag.t-coll  { background:#FFF1D0; color:#a06a00; }
+
+/* Level-Tabelle */
+.info-tablewrap {
+  overflow-x:auto; background:var(--card); border-radius:14px;
+  box-shadow:var(--shadow);
+}
+.info-table { border-collapse:collapse; width:100%; }
+.info-table th, .info-table td {
+  padding:9px 12px; text-align:left; border-bottom:1px solid var(--line);
+  font-size:.86em;
+}
+.info-table thead th {
+  font-size:.68em; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--muted); background:#f5f8fc; white-space:nowrap;
+}
+.info-table tbody tr:last-child td { border-bottom:none; }
+.info-table tr.phase-b td { background:rgba(255,241,208,.35); }
+.info-table .il-lvl { font-weight:800; white-space:nowrap; }
+.info-table .il-lvl small { font-weight:400; color:var(--muted); font-size:.9em; }
+.info-table .il-num {
+  font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap;
+}
+.info-table .il-up { color:var(--muted); }

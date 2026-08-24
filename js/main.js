@@ -273,6 +273,47 @@
   $('btn-switch-profile').addEventListener('click', openProfiles);
 
   // ============================================================
+  //  ERKLÄRUNG (per ℹ️)
+  // ============================================================
+  var infoZurueck = 'profiles';   // wohin "Zurück" führt
+
+  function openInfo(von) {
+    infoZurueck = von;
+    fuelleLevelTabelle();
+    LernApp.showScreen('info');
+  }
+
+  // Die Level-Tabelle aus den echten Daten bauen (Zeiten vom Einmaleins)
+  function fuelleLevelTabelle() {
+    var g = LernApp.getGame('einmaleins');
+    var weiter = {
+      0: '5 von 10',
+      1: '2\u00d7 fehlerfrei',
+      2: '2\u00d7 fehlerfrei',
+      3: '2\u00d7 fehlerfrei',
+      4: '2\u00d7 fehlerfrei + \u00bd Sammlung',
+      5: '+ ganze Sammlung',
+      6: '+ alles 2\u00d7',
+      7: 'Endstufe'
+    };
+    $('info-level-rows').innerHTML = LernApp.LEVELS.map(function (lv) {
+      var t = LernApp.timerSeconds(g, lv.n);
+      var zeit = t >= 60 ? (Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2)) : (t + ' s');
+      return '<tr' + (lv.n >= 5 ? ' class="phase-b"' : '') + '>' +
+        '<td class="il-lvl">' + lv.emoji + ' ' + lv.n + ' <small>' + lv.name + '</small></td>' +
+        '<td class="il-num">' + zeit + '</td>' +
+        '<td class="il-up">' + weiter[lv.n] + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  $('btn-info-profiles').addEventListener('click', function () { openInfo('profiles'); });
+  $('btn-info-games').addEventListener('click', function () { openInfo('games'); });
+  $('btn-info-back').addEventListener('click', function () {
+    if (infoZurueck === 'games') openGames(); else openProfiles();
+  });
+
+  // ============================================================
   //  3. EINSTELLUNGEN
   // ============================================================
   var offenesSpiel = null;

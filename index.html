@@ -9,15 +9,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Lern-App">
 <title>🎓 Meine Lern-App</title>
-<!-- ?v=9 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
+<!-- ?v=10 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
      nicht die alte zwischengespeicherte Datei anzeigen. -->
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 <div class="app">
 
   <!-- ============ 1. WER SPIELT? (Profil-Auswahl) ============ -->
   <div id="screen-profiles" class="screen active">
+    <button class="info-btn" id="btn-info-profiles" title="Erklärung" aria-label="Erklärung">i</button>
     <h1>🎓 Meine Lern-App</h1>
     <p class="subtitle">Wer spielt?</p>
 
@@ -34,6 +35,7 @@
     <div class="who-bar">
       <span class="who" id="who-name"></span>
       <span class="who-actions">
+        <button class="info-btn" id="btn-info-games" title="Erklärung" aria-label="Erklärung">i</button>
         <button class="icon-btn" id="btn-sound-games" title="Ton an/aus">🔊</button>
         <button class="btn-link" id="btn-switch-profile">Spieler wechseln</button>
       </span>
@@ -107,6 +109,56 @@
     </div>
   </div>
 
+  <!-- ============ 6. ERKLÄRUNG (per ℹ️ erreichbar) ============ -->
+  <div id="screen-info" class="screen">
+    <div class="play-top">
+      <button class="btn-back" id="btn-info-back">← Zurück</button>
+    </div>
+    <h1 class="info-h1">Lernapp Erklärung</h1>
+    <p class="subtitle">10 Fragen pro Runde, mit Sanduhr-Timer.</p>
+
+    <h2 class="info-h2">Die drei Spiele</h2>
+    <div class="info-games">
+      <div class="info-game c-blue">
+        <span class="ig-emoji">✖️</span>
+        <span class="ig-text"><b>Einmaleins</b>Malaufgaben 1×1 bis 10×10. Reihen einzeln wählbar.</span>
+      </div>
+      <div class="info-game c-orange">
+        <span class="ig-emoji">➕</span>
+        <span class="ig-text"><b>Zahlzerlegung</b>Zahlen bis 10 zerlegen, z.&nbsp;B. 9 = 3 + ?.</span>
+      </div>
+      <div class="info-game c-purple">
+        <span class="ig-emoji">🕐</span>
+        <span class="ig-text"><b>Uhr lesen</b>Zeigeruhr in 5-Minuten-Schritten. Auswählen oder eintippen.</span>
+      </div>
+    </div>
+
+    <h2 class="info-h2">Level</h2>
+    <div class="info-phases">
+      <div class="info-phase">
+        <span class="info-tag t-speed">Level 0–4</span>
+        <b>Tempo</b><span>Mit jedem Level weniger Zeit pro Aufgabe.</span>
+      </div>
+      <div class="info-phase">
+        <span class="info-tag t-coll">Level 5–7</span>
+        <b>Vollständigkeit</b><span>Zeit bleibt gleich — jetzt müssen alle Aufgaben sitzen.</span>
+      </div>
+    </div>
+    <div class="info-tablewrap">
+      <table class="info-table">
+        <thead><tr><th>Level</th><th>Zeit</th><th>Weiter mit</th></tr></thead>
+        <tbody id="info-level-rows"></tbody>
+      </table>
+    </div>
+    <p class="info-caption">Zeiten fürs Einmaleins &amp; Uhr. Zahlzerlegung ist etwas schneller.</p>
+
+    <h2 class="info-h2">Freie Patzer ❤️</h2>
+    <p class="info-p">0–3 Herzen pro Runde einstellbar. Falsche Antwort mit Herz: das Feld wackelt, du darfst nochmal — zählt dann als richtig. Die Zeit läuft weiter.</p>
+
+    <h2 class="info-h2">Reihen beim Einmaleins</h2>
+    <p class="info-p">Jede Reihe zeigt ihren Fortschritt, eine komplett gemeisterte Reihe bekommt ein&nbsp;⭐. Nimmst du neue Reihen dazu, sinkt das Level kurz — mehr Zeit zum Üben. Nach zwei fehlerfreien Runden bist du wieder oben, alles Gelernte bleibt erhalten.</p>
+  </div>
+
   <!-- ============ NACHFRAGE-DIALOG ============ -->
   <div id="modal" class="modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -124,10 +176,10 @@
 </div>
 
 <!-- Motor zuerst, dann die Spiele (melden sich selbst an), dann Start -->
-<script src="js/engine.js?v=9"></script>
-<script src="js/games/einmaleins.js?v=9"></script>
-<script src="js/games/zerlegung.js?v=9"></script>
-<script src="js/games/uhr.js?v=9"></script>
-<script src="js/main.js?v=9"></script>
+<script src="js/engine.js?v=10"></script>
+<script src="js/games/einmaleins.js?v=10"></script>
+<script src="js/games/zerlegung.js?v=10"></script>
+<script src="js/games/uhr.js?v=10"></script>
+<script src="js/main.js?v=10"></script>
 </body>
 </html>
