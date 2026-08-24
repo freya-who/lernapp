@@ -50,7 +50,16 @@
   var MASTER_MAX = 2;            // höher als 2 wird nicht gezählt
   var WEIGHT_FROM_LEVEL = 4;     // ab hier werden schwache Aufgaben bevorzugt
 
-  var AVATARS = ['🦊','🐰','🐼','🦁','🐨','🐸','🦄','🐧'];
+  /* Auswahl fürs Spieler-Symbol — bewusst nur kindgerechte Tiere.
+     Wer eins dazunehmen will: einfach hier in die Liste schreiben. */
+  var AVATARS = [
+    '🦊','🐰','🐼','🦁','🐨',
+    '🐸','🦄','🐧','🐢','🦉',
+    '🐝','🐙','🦋','🐬','🐯',
+    '🐷','🐮','🐶','🐱','🐹',
+    '🦔','🐴','🐳','🦖','🦒',
+    '🐠','🦩','🦥','🦦','🐞'
+  ];
 
   // ============================================================
   //  SPIELE-VERZEICHNIS
@@ -112,14 +121,28 @@
   // ============================================================
   function makeProfile(name) {
     var id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    var used = Object.keys(data ? data.profiles : {}).length;
+    // Ein Symbol nehmen, das noch niemand hat — sonst irgendeins
+    var vergeben = {};
+    if (data && data.profiles) {
+      Object.keys(data.profiles).forEach(function (k) { vergeben[data.profiles[k].avatar] = true; });
+    }
+    var frei = AVATARS.filter(function (a) { return !vergeben[a]; });
+    var wahl = (frei.length ? frei : AVATARS)[Math.floor(Math.random() * (frei.length || AVATARS.length))];
     return {
       id: id,
       name: String(name).trim().slice(0, 14) || 'Spieler',
-      avatar: AVATARS[used % AVATARS.length],
+      avatar: wahl,
       created: Date.now(),
       games: {}
     };
+  }
+
+  function setAvatar(id, emoji) {
+    var p = data.profiles[id];
+    if (!p || AVATARS.indexOf(emoji) === -1) return false;
+    p.avatar = emoji;
+    save();
+    return true;
   }
 
   function listProfiles() {
@@ -951,6 +974,7 @@
     listProfiles: listProfiles, createProfile: createProfile,
     deleteProfile: deleteProfile, currentProfile: currentProfile,
     selectProfile: selectProfile, gameState: gameState,
+    AVATARS: AVATARS, setAvatar: setAvatar,
     levelInfo: levelInfo, prettyTime: prettyTime,
     timerSeconds: timerSeconds,
     coverage: coverage,

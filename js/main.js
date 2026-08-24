@@ -33,9 +33,16 @@
   // ============================================================
   function zeigeDialog(o) {
     $('modal-icon').textContent  = o.icon || '⚠️';
+    $('modal-icon').hidden       = (o.icon === false);
     $('modal-title').textContent = o.titel;
-    $('modal-text').textContent  = o.text;
+    $('modal-text').textContent  = o.text || '';
+    $('modal-text').hidden       = !o.text;
+    // Optionaler eigener Inhalt (z.B. das Raster mit den Tier-Symbolen)
+    var body = $('modal-body');
+    body.innerHTML = '';
+    if (o.inhalt) body.appendChild(o.inhalt);
     var ok = $('modal-ok'), zurueck = $('modal-back');
+    ok.hidden = (o.okText === false);
     ok.textContent = o.okText || 'OK';
     zurueck.textContent = o.zurueckText || 'Zurück';
     zurueck.hidden = !o.aufZurueck;
@@ -51,7 +58,40 @@
     ok.addEventListener('click', jaKlick);
     zurueck.addEventListener('click', neinKlick);
     $('modal').hidden = false;
-    ok.focus();
+    (ok.hidden ? zurueck : ok).focus();
+    return schliessen;
+  }
+
+  /* SPIELER-SYMBOL WÄHLEN
+     Tippt man auf das Tier neben dem Namen, öffnet sich eine kleine
+     Auswahl. Nur die Symbole aus LernApp.AVATARS sind möglich. */
+  function oeffneAvatarWahl(profil, danach) {
+    var raster = document.createElement('div');
+    raster.className = 'avatar-grid';
+
+    var schliessen = null;
+    LernApp.AVATARS.forEach(function (emoji) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'avatar-pick' + (emoji === profil.avatar ? ' on' : '');
+      b.textContent = emoji;
+      b.setAttribute('aria-label', 'Symbol ' + emoji + ' wählen');
+      b.addEventListener('click', function () {
+        LernApp.setAvatar(profil.id, emoji);
+        if (schliessen) schliessen();
+        if (danach) danach();
+      });
+      raster.appendChild(b);
+    });
+
+    schliessen = zeigeDialog({
+      icon: profil.avatar,
+      titel: 'Symbol für ' + profil.name,
+      inhalt: raster,
+      okText: false,                 // kein OK nötig — Antippen wählt direkt
+      zurueckText: 'Abbrechen',
+      aufZurueck: function () {}
+    });
   }
 
   // ============================================================
@@ -73,9 +113,16 @@
       var card = document.createElement('div');
       card.className = 'profile-card';
 
-      var av = document.createElement('div');
+      var av = document.createElement('button');
+      av.type = 'button';
       av.className = 'avatar';
-      av.textContent = p.avatar || '🙂';
+      av.title = 'Symbol ändern';
+      av.innerHTML = '<span class="avatar-emoji">' + (p.avatar || '🙂') + '</span>' +
+                     '<span class="avatar-edit">✏️</span>';
+      av.addEventListener('click', function (e) {
+        e.stopPropagation();                 // nicht das Profil starten
+        oeffneAvatarWahl(p, renderProfiles);
+      });
 
       var info = document.createElement('div');
       info.className = 'pinfo';
@@ -139,7 +186,16 @@
   function openGames() {
     var p = LernApp.currentProfile();
     if (!p) { openProfiles(); return; }
-    $('who-name').textContent = (p.avatar || '🙂') + '  ' + p.name;
+    var who = $('who-name');
+    who.innerHTML = '';
+    var wav = document.createElement('button');
+    wav.type = 'button';
+    wav.className = 'who-avatar';
+    wav.textContent = p.avatar || '🙂';
+    wav.title = 'Symbol ändern';
+    wav.addEventListener('click', function () { oeffneAvatarWahl(p, openGames); });
+    who.appendChild(wav);
+    who.appendChild(document.createTextNode(p.name));
     renderGames();
     paintSoundButtons();
     LernApp.showScreen('games');
