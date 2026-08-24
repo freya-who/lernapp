@@ -474,3 +474,32 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
   color:#8A2C26; font-size:.83em; line-height:1.5;
 }
 .rowwarn b { font-weight:800; }
+
+/* ---------- Nachfrage-Dialog ---------- */
+.modal {
+  position:fixed; inset:0; z-index:900;
+  background:rgba(28,34,44,.45); backdrop-filter:blur(2px);
+  display:flex; align-items:center; justify-content:center; padding:22px;
+  animation:fadein .18s ease;
+}
+.modal[hidden] { display:none; }
+@keyframes fadein { from{opacity:0} to{opacity:1} }
+
+.modal-card {
+  background:var(--card); border-radius:22px; box-shadow:var(--shadow-lift);
+  padding:24px 22px 20px; max-width:400px; width:100%; text-align:center;
+  animation:pop .22s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes pop { from{opacity:0; transform:scale(.92) translateY(10px)} to{opacity:1; transform:none} }
+
+.modal-icon { font-size:2.4em; line-height:1; margin-bottom:8px; }
+.modal-card h3 {
+  font-size:1.14em; font-weight:800; margin:0 0 10px; color:var(--text);
+}
+.modal-card p {
+  margin:0 0 18px; font-size:.94em; color:var(--muted);
+  line-height:1.55; white-space:pre-line; text-align:left;
+}
+.modal-actions { display:flex; flex-direction:column; gap:8px; }
+.modal-actions .btn { width:100%; }
+.modal-actions .btn-ghost { padding:11px 20px; font-size:.94em; }

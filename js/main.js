@@ -28,6 +28,33 @@
   paintSoundButtons();
 
   // ============================================================
+  //  NACHFRAGE-DIALOG (eigener statt Browser-Fenster, damit die
+  //  Knöpfe sinnvoll beschriftet sind)
+  // ============================================================
+  function zeigeDialog(o) {
+    $('modal-icon').textContent  = o.icon || '⚠️';
+    $('modal-title').textContent = o.titel;
+    $('modal-text').textContent  = o.text;
+    var ok = $('modal-ok'), zurueck = $('modal-back');
+    ok.textContent = o.okText || 'OK';
+    zurueck.textContent = o.zurueckText || 'Zurück';
+    zurueck.hidden = !o.aufZurueck;
+
+    function schliessen() {
+      $('modal').hidden = true;
+      ok.removeEventListener('click', jaKlick);
+      zurueck.removeEventListener('click', neinKlick);
+    }
+    function jaKlick()   { schliessen(); if (o.aufOk) o.aufOk(); }
+    function neinKlick() { schliessen(); if (o.aufZurueck) o.aufZurueck(); }
+
+    ok.addEventListener('click', jaKlick);
+    zurueck.addEventListener('click', neinKlick);
+    $('modal').hidden = false;
+    ok.focus();
+  }
+
+  // ============================================================
   //  1. PROFIL-AUSWAHL
   // ============================================================
   function renderProfiles() {
@@ -239,24 +266,42 @@
   }
 
   /* Beim Verlassen der Einstellungen prüfen, ob neue Aufgaben dazugekommen
-     sind — dann sinkt das Level (siehe syncFactSet) und wir sagen es klar. */
+     sind. Falls das Level dadurch sinkt, erst fragen — und die Änderung
+     erst übernehmen, wenn "OK" gedrückt wurde. */
   function closeSettings() {
     var p = LernApp.currentProfile();
-    if (p && offenesSpiel) {
-      var g = LernApp.getGame(offenesSpiel);
-      var st = LernApp.gameState(p, offenesSpiel);
-      var r = LernApp.syncFactSet(st, g);
-      LernApp.save();
-      if (r.reset) {
-        var lv = LernApp.levelInfo(r.auf);
-        alert(r.dazu + ' neue Aufgaben sind dazugekommen.\n\n' +
-              'Das Level geht von ' + r.von + ' auf ' + r.auf + ' zurück (' +
+    if (!p || !offenesSpiel) { openGames(); return; }
+
+    var g  = LernApp.getGame(offenesSpiel);
+    var st = LernApp.gameState(p, offenesSpiel);
+    var v  = LernApp.previewFactSet(st, g);
+
+    if (v.dazu > 0 && v.wuerdeSinken) {
+      var lv = LernApp.levelInfo(v.auf);
+      var zurueck = Math.max(v.auf + 1,
+                    Math.min(LernApp.natuerlichesLevel(st, g), st.bestLevel || 0));
+      zeigeDialog({
+        icon: '📚',
+        titel: v.dazu + ' neue Aufgaben kommen dazu',
+        text: 'Zum Üben sinkt das Level von ' + v.von + ' auf ' + v.auf + ' — ' +
               lv.emoji + ' ' + lv.name + ', ' +
-              LernApp.prettyTime(LernApp.timerSeconds(g, r.auf)) + ' pro Aufgabe), ' +
-              'damit für das Neue genug Zeit bleibt.\n\n' +
-              'Alles bisher Gelernte bleibt gespeichert.');
-      }
+              LernApp.prettyTime(LernApp.timerSeconds(g, v.auf)) + ' pro Aufgabe.\n\n' +
+              'Nach zwei fehlerfreien Runden geht es direkt wieder auf Level ' + zurueck + '.\n\n' +
+              'Alles bisher Gelernte bleibt gespeichert.',
+        okText: 'OK, los geht\u2019s',
+        zurueckText: 'Zurück zur Auswahl',
+        aufOk: function () {
+          LernApp.syncFactSet(st, g);
+          LernApp.save();
+          openGames();
+        },
+        aufZurueck: function () { /* im Einstellungsbildschirm bleiben */ }
+      });
+      return;
     }
+
+    LernApp.syncFactSet(st, g);
+    LernApp.save();
     openGames();
   }
   $('btn-settings-back').addEventListener('click', closeSettings);

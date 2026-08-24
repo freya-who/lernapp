@@ -200,11 +200,10 @@
      Die restlichen Plätze füllen sich gewichtet: was noch nicht sitzt,
      kommt häufiger. */
   /* MISCHUNG PRO RUNDE
-     Die Hälfte der Runde besteht aus Aufgaben, die noch nicht sitzen,
-     die andere Hälfte aus schon gemeisterten. So kommt immer Neues dran,
-     ohne dass das Gelernte verloren geht — und es fühlt sich nicht wie
-     eine Prüfung an, bei der alles unbekannt ist. */
-  var NEU_PRO_RUNDE = 5;
+     7 von 10 Aufgaben sind noch nicht sicher, 3 sind altbewährt. So kommt
+     genug Neues dran, ohne dass das Gelernte einrostet.
+     (Zum Nachjustieren: einfach diese Zahl ändern.) */
+  var NEU_PRO_RUNDE = 7;
 
   function shuffleArr(a) {
     a = a.slice();
@@ -257,22 +256,32 @@
 
     var ziel = zielFuer(st);
     var m = st.mastery || {};
-    var neu = [], alt = [];
+
+    /* Drei Töpfe statt zwei. Wichtig: "noch nie richtig" und "einmal richtig"
+       dürfen NICHT zusammengeworfen werden — sonst gehen ein paar brandneue
+       Aufgaben in einer großen Menge halbfertiger unter und kommen kaum dran. */
+    var nie = [], halb = [], sitzt = [];
     facts.forEach(function (f) {
-      if ((m[f] || 0) < ziel) neu.push(f); else alt.push(f);
+      var c = m[f] || 0;
+      if (c >= ziel)      sitzt.push(f);
+      else if (c === 0)   nie.push(f);
+      else                halb.push(f);
     });
 
-    var plan = [];
-    // 1) Feste Portion Neues
-    var nNeu = Math.min(neu.length, NEU_PRO_RUNDE);
-    plan = plan.concat(shuffleArr(neu).slice(0, nNeu));
-    // 2) Auffüllen mit Altbewährtem
-    var nAlt = Math.min(alt.length, ROUND_SIZE - plan.length);
-    plan = plan.concat(shuffleArr(alt).slice(0, nAlt));
-    // 3) Reicht ein Topf nicht, füllt der andere auf
+    // Zuerst das noch nie Gekonnte, dann das Halbfertige
+    var offen = shuffleArr(nie).concat(shuffleArr(halb));
+
+    var plan = offen.slice(0, Math.min(offen.length, NEU_PRO_RUNDE));
+    plan = plan.concat(shuffleArr(sitzt).slice(0, Math.max(0, ROUND_SIZE - plan.length)));
+
+    // Reicht ein Topf nicht, füllt der andere auf
+    var i = NEU_PRO_RUNDE;
     while (plan.length < ROUND_SIZE) {
-      var topf = neu.length ? neu : (alt.length ? alt : facts);
-      plan.push(topf[Math.floor(Math.random() * topf.length)]);
+      if (i < offen.length) { plan.push(offen[i]); i++; }
+      else {
+        var topf = sitzt.length ? sitzt : facts;
+        plan.push(topf[Math.floor(Math.random() * topf.length)]);
+      }
     }
     return spreadDuplicates(shuffleArr(plan).slice(0, ROUND_SIZE));
   }

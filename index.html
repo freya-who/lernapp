@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Lern-App">
 <title>🎓 Meine Lern-App</title>
-<!-- ?v=7 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
+<!-- ?v=8 = Versionsnummer. Bei Änderungen hochzählen, damit Handys
      nicht die alte zwischengespeicherte Datei anzeigen. -->
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <div class="app">
@@ -107,13 +107,26 @@
     </div>
   </div>
 
+  <!-- ============ NACHFRAGE-DIALOG ============ -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-icon" id="modal-icon">⚠️</div>
+      <h3 id="modal-title"></h3>
+      <p id="modal-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modal-ok">OK</button>
+        <button class="btn btn-ghost" id="modal-back">Zurück zur Auswahl</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Motor zuerst, dann die Spiele (melden sich selbst an), dann Start -->
-<script src="js/engine.js?v=7"></script>
-<script src="js/games/einmaleins.js?v=7"></script>
-<script src="js/games/zerlegung.js?v=7"></script>
-<script src="js/games/uhr.js?v=7"></script>
-<script src="js/main.js?v=7"></script>
+<script src="js/engine.js?v=8"></script>
+<script src="js/games/einmaleins.js?v=8"></script>
+<script src="js/games/zerlegung.js?v=8"></script>
+<script src="js/games/uhr.js?v=8"></script>
+<script src="js/main.js?v=8"></script>
 </body>
 </html>
