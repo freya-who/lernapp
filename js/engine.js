@@ -17,6 +17,7 @@
   var PASS_L0      = 5;    // Level 0 -> 1 schafft man mit 5 von 10
   var MAX_STRIKES  = 2;    // erst nach 2 verpatzten Runden geht es abwärts
   var NEED_PERFECT = 2;    // für einen Aufstieg braucht es 2 fehlerfreie Runden
+  var RESET_LEVEL  = 3;    // hierauf fällt man zurück, wenn neue Aufgaben dazukommen
 
   // Die Level-Leiter. Die ZEIT steht beim jeweiligen Spiel (game.timers),
   // weil 20 Sekunden beim Einmaleins etwas anderes bedeuten als beim Uhr-Lesen.
@@ -159,6 +160,8 @@
     if (typeof st.rounds !== 'number') st.rounds = 0;
     if (typeof st.bestCorrect !== 'number') st.bestCorrect = 0;
     if (!st.mastery || typeof st.mastery !== 'object') st.mastery = {};
+    if (typeof st.factCount !== 'number') st.factCount = null;
+    if (typeof st.bestLevel !== 'number') st.bestLevel = st.level;
 
     var def = (g && g.defaultSettings) ? g.defaultSettings() : {};
     if (!st.settings || typeof st.settings !== 'object') st.settings = {};
@@ -196,7 +199,12 @@
      man am Ende ewig auf die letzten drei fehlenden Aufgaben warten.
      Die restlichen Plätze füllen sich gewichtet: was noch nicht sitzt,
      kommt häufiger. */
-  var NEW_PER_ROUND = 6;
+  /* MISCHUNG PRO RUNDE
+     Die Hälfte der Runde besteht aus Aufgaben, die noch nicht sitzen,
+     die andere Hälfte aus schon gemeisterten. So kommt immer Neues dran,
+     ohne dass das Gelernte verloren geht — und es fühlt sich nicht wie
+     eine Prüfung an, bei der alles unbekannt ist. */
+  var NEU_PRO_RUNDE = 5;
 
   function shuffleArr(a) {
     a = a.slice();
@@ -237,19 +245,83 @@
     return plan;
   }
 
+  // Ab wann gilt eine Aufgabe als "sitzt"? Richtet sich nach dem Ziel des Levels.
+  function zielFuer(st) {
+    var req = COVERAGE_REQ[st.level];
+    return req ? req.min : MASTER_MAX;
+  }
+
   function buildPlan(game, st) {
     var facts = game.allFacts(st.settings);
     if (!facts.length) return [];
-    var plan = [];
-    var req = COVERAGE_REQ[st.level];
-    var m = st.mastery || {};
 
-    if (req) {
-      var fehlend = facts.filter(function (f) { return (m[f] || 0) < req.min; });
-      plan = shuffleArr(fehlend).slice(0, Math.min(fehlend.length, NEW_PER_ROUND));
+    var ziel = zielFuer(st);
+    var m = st.mastery || {};
+    var neu = [], alt = [];
+    facts.forEach(function (f) {
+      if ((m[f] || 0) < ziel) neu.push(f); else alt.push(f);
+    });
+
+    var plan = [];
+    // 1) Feste Portion Neues
+    var nNeu = Math.min(neu.length, NEU_PRO_RUNDE);
+    plan = plan.concat(shuffleArr(neu).slice(0, nNeu));
+    // 2) Auffüllen mit Altbewährtem
+    var nAlt = Math.min(alt.length, ROUND_SIZE - plan.length);
+    plan = plan.concat(shuffleArr(alt).slice(0, nAlt));
+    // 3) Reicht ein Topf nicht, füllt der andere auf
+    while (plan.length < ROUND_SIZE) {
+      var topf = neu.length ? neu : (alt.length ? alt : facts);
+      plan.push(topf[Math.floor(Math.random() * topf.length)]);
     }
-    while (plan.length < ROUND_SIZE) plan.push(weightedPick(facts, st));
     return spreadDuplicates(shuffleArr(plan).slice(0, ROUND_SIZE));
+  }
+
+  /* KOMMEN NEUE AUFGABEN DAZU?
+     Schaltet jemand z.B. weitere Reihen ein, wächst der Aufgabenvorrat.
+     Dann bleibt alles Gelernte erhalten (mastery wird NICHT angefasst),
+     aber das Level fällt auf RESET_LEVEL zurück — es wäre unfair, neue
+     Aufgaben gleich unter dem schnellsten Zeitdruck zu üben.
+     Rückgabe beschreibt, was passiert ist (für die Anzeige). */
+  function syncFactSet(st, game) {
+    var jetzt = game.allFacts(st.settings).length;
+    var vorher = (typeof st.factCount === 'number') ? st.factCount : jetzt;
+    st.factCount = jetzt;
+
+    if (jetzt > vorher && st.level > RESET_LEVEL) {
+      var vonLevel = st.level;
+      st.level = RESET_LEVEL;
+      st.streak = 0;
+      st.strikes = 0;
+      return { reset: true, von: vonLevel, auf: RESET_LEVEL, dazu: jetzt - vorher };
+    }
+    return { reset: false, dazu: Math.max(0, jetzt - vorher) };
+  }
+
+  /* Was WÜRDE passieren, wenn man jetzt speichert? (nur nachschauen) */
+  function previewFactSet(st, game) {
+    var jetzt = game.allFacts(st.settings).length;
+    var vorher = (typeof st.factCount === 'number') ? st.factCount : jetzt;
+    return {
+      dazu: Math.max(0, jetzt - vorher),
+      gesamt: jetzt,
+      wuerdeSinken: (jetzt > vorher && st.level > RESET_LEVEL),
+      von: st.level, auf: RESET_LEVEL
+    };
+  }
+
+  /* Welches Level ist allein durch die Sammlung gerechtfertigt?
+     Beispiel: Wer 90 von 100 Aufgaben einmal richtig hatte, erfüllt die
+     50-%-Hürde (Level 5), aber nicht die 100-%-Hürde (Level 6). */
+  function natuerlichesLevel(st, game) {
+    var lvl = RESET_LEVEL;
+    for (var L = RESET_LEVEL + 1; L <= MAX_LEVEL; L++) {
+      var req = COVERAGE_REQ[L - 1];          // was man braucht, um L zu erreichen
+      if (!req) { lvl = L; continue; }
+      var cov = coverage(st, game, req.min);
+      if (cov.pct + 1e-9 >= req.pct) lvl = L; else break;
+    }
+    return lvl;
   }
 
   // ============================================================
@@ -296,8 +368,18 @@
             return res;
           }
         }
-        if (from < MAX_LEVEL) { st.level = from + 1; res.kind = 'up'; }
-        else                  { res.kind = 'master'; }
+        if (from < MAX_LEVEL) {
+          /* Wer schon einmal weiter oben war und dessen Sammlung das immer
+             noch hergibt, springt direkt dorthin zurück — statt jede Stufe
+             erneut einzeln zu erklimmen. Neue Spieler steigen normal auf. */
+          var natur = natuerlichesLevel(st, game);
+          var ziel  = Math.max(from + 1, Math.min(natur, st.bestLevel || 0));
+          st.level  = Math.min(MAX_LEVEL, ziel);
+          res.kind  = 'up';
+          res.gesprungen = (st.level > from + 1);
+        } else {
+          res.kind = 'master';
+        }
         st.streak = 0;
       }
 
@@ -312,6 +394,7 @@
         res.kind = 'warn';
       }
     }
+    if (st.level > (st.bestLevel || 0)) st.bestLevel = st.level;
     res.to = st.level;
     res.strikes = st.strikes;
     res.streak  = st.streak;
@@ -407,6 +490,7 @@
       deadline: 0,
       paused: null
     };
+    syncFactSet(st, game);          // falls Einstellungen geändert wurden
     round.plan = buildPlan(game, st);
     showScreen('play');
     renderLevelBar();
@@ -739,8 +823,12 @@
 
     var emoji, title, msg;
     if (res.kind === 'up') {
-      emoji = '🎉'; title = 'Level geschafft!';
-      msg = 'Du bist jetzt ' + lvTo.emoji + ' ' + lvTo.name + '. Ab jetzt hast du ' +
+      emoji = res.gesprungen ? '🚀' : '🎉';
+      title = res.gesprungen ? 'Zurück nach oben!' : 'Level geschafft!';
+      msg = (res.gesprungen
+              ? 'Deine Sammlung war ja schon fast voll — du springst gleich mehrere Stufen. '
+              : '') +
+            'Du bist jetzt ' + lvTo.emoji + ' ' + lvTo.name + '. Ab jetzt hast du ' +
             prettyTime(timerSeconds(game, res.to)) + ' pro Aufgabe.';
       soundLevelUp(); confetti();
 
@@ -858,6 +946,9 @@
     timerSeconds: timerSeconds,
     coverage: coverage,
     buildPlan: buildPlan,      // nützlich zum Nachschauen/Prüfen
+    syncFactSet: syncFactSet, previewFactSet: previewFactSet,
+    natuerlichesLevel: natuerlichesLevel,
+    RESET_LEVEL: RESET_LEVEL, NEU_PRO_RUNDE: NEU_PRO_RUNDE,
     soundOn: soundOn, toggleSound: toggleSound,
     startRound: startRound, abortRound: abortRound,
     showScreen: showScreen,

@@ -130,9 +130,16 @@
       var card = document.createElement('div');
       card.className = 'game-card c-' + g.color + (g.ready ? '' : ' soon');
 
-      // Sammlung erst zeigen, wenn sie eine Rolle spielt (ab Level 4)
+      // Zusatzzeile: gemeisterte Reihen bzw. Stand der Sammlung
       var covLine = '';
-      if (st.level >= 4) {
+      if (g.reihenUebersicht) {
+        var fertig = g.reihenUebersicht(st.mastery).filter(function (r) { return r.fertig; });
+        if (fertig.length) {
+          covLine = '<span class="gcov">⭐ Gemeistert: ' +
+                    fertig.map(function (r) { return r.reihe + 'er'; }).join(', ') + '</span>';
+        }
+      }
+      if (!covLine && st.level >= 4) {
         var need = LernApp.COVERAGE_REQ[st.level] || { min:1 };
         var cov = LernApp.coverage(st, g, need.min);
         covLine = '<span class="gcov">📚 Sammlung: ' + cov.have + ' von ' + cov.total + '</span>';
@@ -185,7 +192,10 @@
   // ============================================================
   //  3. EINSTELLUNGEN
   // ============================================================
+  var offenesSpiel = null;
+
   function openSettings(gameId) {
+    offenesSpiel = gameId;
     var p = LernApp.currentProfile();
     var g = LernApp.getGame(gameId);
     var st = LernApp.gameState(p, gameId);
@@ -198,7 +208,7 @@
     // (b) Das Spiel baut seinen eigenen Teil
     var body = $('settings-body');
     body.innerHTML = '';
-    g.renderSettings(body, st.settings, function () { LernApp.save(); });
+    g.renderSettings(body, st.settings, function () { LernApp.save(); }, st);
 
     LernApp.showScreen('settings');
   }
@@ -228,8 +238,29 @@
     });
   }
 
-  $('btn-settings-back').addEventListener('click', openGames);
-  $('btn-settings-done').addEventListener('click', openGames);
+  /* Beim Verlassen der Einstellungen prüfen, ob neue Aufgaben dazugekommen
+     sind — dann sinkt das Level (siehe syncFactSet) und wir sagen es klar. */
+  function closeSettings() {
+    var p = LernApp.currentProfile();
+    if (p && offenesSpiel) {
+      var g = LernApp.getGame(offenesSpiel);
+      var st = LernApp.gameState(p, offenesSpiel);
+      var r = LernApp.syncFactSet(st, g);
+      LernApp.save();
+      if (r.reset) {
+        var lv = LernApp.levelInfo(r.auf);
+        alert(r.dazu + ' neue Aufgaben sind dazugekommen.\n\n' +
+              'Das Level geht von ' + r.von + ' auf ' + r.auf + ' zurück (' +
+              lv.emoji + ' ' + lv.name + ', ' +
+              LernApp.prettyTime(LernApp.timerSeconds(g, r.auf)) + ' pro Aufgabe), ' +
+              'damit für das Neue genug Zeit bleibt.\n\n' +
+              'Alles bisher Gelernte bleibt gespeichert.');
+      }
+    }
+    openGames();
+  }
+  $('btn-settings-back').addEventListener('click', closeSettings);
+  $('btn-settings-done').addEventListener('click', closeSettings);
 
   // ============================================================
   //  4. SPIELEN / ERGEBNIS

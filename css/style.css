@@ -425,3 +425,52 @@ h2 { font-size:1.2em; margin:2px 0 14px; text-align:center; }
 .play-area .clock.clock-big      { max-width:240px; }
 .play-area .clock.clock-type     { max-width:180px; }
 .play-area .clock.clock-type.clock-big { max-width:196px; }
+
+/* ---------- Reihen-Übersicht (Einmaleins) ---------- */
+.chips { align-items:stretch; }
+.rowchip {
+  position:relative; padding:10px 0 12px; display:flex;
+  flex-direction:column; align-items:center; gap:5px; overflow:hidden;
+}
+.rowchip .rownum { font-size:1.05em; font-weight:800; line-height:1; }
+.rowchip .rowbar {
+  position:relative; width:74%; height:6px; border-radius:99px;
+  background:#e5eaf2; overflow:hidden;
+}
+.rowchip.on .rowbar { background:rgba(255,255,255,.32); }
+.rowchip .rowbar i { position:absolute; left:0; top:0; bottom:0; border-radius:99px; }
+.rowchip .rowbar .b1 { background:#9DBCF5; }          /* schon mal richtig */
+.rowchip .rowbar .b2 { background:#E8A317; }          /* zweimal richtig  */
+.rowchip.on .rowbar .b1 { background:rgba(255,255,255,.75); }
+.rowchip.on .rowbar .b2 { background:#FFD34D; }
+.rowchip.done { border-color:#E8A317; }
+.rowchip.done.on { border-color:#FFD34D; }
+.rowchip .rowstar {
+  position:absolute; top:2px; right:3px; font-size:.7em; line-height:1;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));
+}
+
+.rowlegend {
+  display:flex; flex-wrap:wrap; gap:5px 12px; margin-top:14px;
+  font-size:.72em; color:var(--muted); font-weight:600; align-items:center;
+}
+.rowlegend span { display:inline-flex; align-items:center; white-space:nowrap; }
+.rowlegend .dot {
+  display:inline-block; width:9px; height:9px; border-radius:99px;
+  margin-right:4px; vertical-align:middle;
+}
+.rowlegend .d1 { background:#9DBCF5; }
+.rowlegend .d2 { background:#E8A317; }
+
+.rowsummary {
+  margin-top:12px; padding:11px 13px; border-radius:11px;
+  background:#FFF8E8; color:#7A5A12; font-size:.85em; font-weight:600;
+  line-height:1.4;
+}
+
+.rowwarn {
+  margin-top:11px; padding:12px 14px; border-radius:11px;
+  background:#FFF1F0; border-left:3px solid var(--red);
+  color:#8A2C26; font-size:.83em; line-height:1.5;
+}
+.rowwarn b { font-weight:800; }

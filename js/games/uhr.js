@@ -174,7 +174,7 @@
     ready: true,
 
     // Uhr ablesen braucht mehr Bedenkzeit als reines Rechnen
-    timers: [180, 180, 120, 45, 30, 30, 30, 30],
+    timers: [180, 180, 120, 60, 30, 30, 30, 30],
 
     defaultSettings: function () {
       return {
